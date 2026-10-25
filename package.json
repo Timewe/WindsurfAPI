@@ -1,6 +1,6 @@
 {
   "name": "windsurf-api",
-  "version": "3.10.1",
+  "version": "3.141.592654",
   "description": "Windsurf/Devin to OpenAI + Anthropic + Gemini compatible API proxy. Turns Devin's 100+ AI models (Claude, GPT, Gemini, DeepSeek, Grok, Qwen, Kimi, GLM, SWE) into multi-protocol API endpoints. Zero npm runtime dependencies (image codecs vendored under src/vendor).",
   "type": "module",
   "main": "src/index.js",
@@ -34,6 +34,7 @@
     "verify:release-assets": "node scripts/verify-release-assets.mjs",
     "build:bundle": "esbuild src/index.js --bundle --platform=node --format=cjs --target=node22 --outfile=src/_bundle.cjs --external:node:* --define:import.meta.url=__WA_IMPORT_META_URL__ --banner:js=\"const __WA_IMPORT_META_URL__=require('node:url').pathToFileURL(__filename).href;\"",
     "build:exe": "npm run build:bundle && pkg src/_bundle.cjs --config package.json --targets node22-win-x64 --output dist-windows/windsurfapi.exe",
+    "build:exe:linux": "npm run build:bundle && pkg src/_bundle.cjs --config package.json --targets node22-linux-x64 --output dist-linux/windsurfapi",
     "build:exe:macos": "npm run build:bundle && pkg src/_bundle.cjs --config package.json --targets node22-macos-arm64 --output dist-macos/windsurfapi-macos-arm64",
     "build:exe:macos-x64": "npm run build:bundle && pkg src/_bundle.cjs --config package.json --targets node22-macos-x64 --output dist-macos/windsurfapi-macos-x64",
     "audit:baselines": "node scripts/spec-baseline-audit.mjs",
@@ -53,6 +54,7 @@
     ],
     "targets": [
       "node22-win-x64",
+      "node22-linux-x64",
       "node22-macos-arm64",
       "node22-macos-x64"
     ],
