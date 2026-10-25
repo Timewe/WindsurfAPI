@@ -41,6 +41,7 @@ jobs:
         # same SHA had run it, which is a coincidence, not a gate. Same selector as the
         # CI wire job: the newest ANNOTATED release tag that is a strict ancestor, no
         # lightweight fallback, refusing a self-comparison.
+        if: github.event_name == 'push'  # Only require baseline on tag push, skip for manual trigger
         run: |
           node scripts/wire-base.mjs
           BASE_TAG=$(node scripts/wire-base.mjs --field tag)
@@ -67,6 +68,7 @@ jobs:
         # the only mode that catches a pin moved by a change no spec's test list
         # names. The incremental `npm run gate` stays fast with change-scoped
         # selection; this is the gate that cannot be scoped.
+        if: github.event_name == 'push'  # Only check baselines on tag push, skip for manual trigger
         run: node scripts/spec-baseline-check.mjs --all
 
       - name: Run tests
