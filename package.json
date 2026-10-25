@@ -68,10 +68,10 @@
   "homepage": "https://dwgx.github.io/WindsurfAPI/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dwgx/WindsurfAPI.git"
+    "url": "git+https://github.com/Timewe/WindsurfAPI.git"
   },
   "bugs": {
-    "url": "https://github.com/dwgx/WindsurfAPI/issues"
+    "url": "https://github.com/Timewe/WindsurfAPI/issues"
   },
   "keywords": [
     "windsurf",

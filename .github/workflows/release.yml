@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:  # Allow manual trigger for testing (remove after testing)
 
 jobs:
   test:
@@ -108,7 +109,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          # github.repository (= dwgx/WindsurfAPI) lowercases to "windsurfapi"
+          # github.repository (= Timewe/WindsurfAPI) lowercases to "windsurfapi"
           # without the hyphen the package.json npm name uses. Hardcode the
           # kebab form so the image name stays "windsurf-api".
           images: ghcr.io/${{ github.repository_owner }}/windsurf-api
@@ -368,9 +369,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Get version from tag
+      - name: Get version from tag or use test version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=3.141.592654-test" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Check for release notes
         id: notes
@@ -508,8 +514,8 @@ jobs:
           name: v${{ steps.version.outputs.VERSION }}
           body_path: ${{ steps.notes.outputs.found == 'true' && steps.notes.outputs.file || '' }}
           generate_release_notes: ${{ steps.notes.outputs.found != 'true' }}
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          draft: ${{ github.event_name == 'workflow_dispatch' }}  # Draft for manual trigger
+          prerelease: ${{ contains(github.ref_name, '-') || github.event_name == 'workflow_dispatch' }}
           files: |
             *.sig
             *.pem
