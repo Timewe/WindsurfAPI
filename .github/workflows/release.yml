@@ -180,6 +180,40 @@ jobs:
           path: dist-macos/windsurfapi-macos-arm64
           if-no-files-found: error
 
+  linux-exe:
+    name: Linux single-binary
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Build windsurfapi-linux
+        run: |
+          npm i -g @yao-pkg/pkg@6.21.0 esbuild@0.28.1
+          npm run build:bundle
+          mkdir -p dist-linux
+          pkg src/_bundle.cjs --config package.json --targets node22-linux-x64 --output dist-linux/windsurfapi
+
+      - name: Smoke-check the binary boots
+        run: node scripts/exe-boot-smoke.mjs dist-linux/windsurfapi
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: windsurfapi-linux
+          path: dist-linux/windsurfapi
+          if-no-files-found: error
+
   # Use an explicit Intel label so the x64 build does not move to ARM.
   # It is NOT in the release `needs`, so a failed or delayed x64 build never
   # blocks the release. If it finishes in time its artifact is picked up;
@@ -320,7 +354,7 @@ jobs:
 
   release:
     name: GitHub Release
-    needs: [docker, windows-exe, macos-exe-arm64]
+    needs: [docker, linux-exe, windows-exe, macos-exe-arm64]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -372,6 +406,23 @@ jobs:
           name: windsurfapi-macos-x64
           path: dist-macos
 
+      - name: Download Linux binary
+        uses: actions/download-artifact@v7
+        with:
+          name: windsurfapi-linux
+          path: dist-linux
+
+      - name: Package Linux zip (binary + scripts)
+        run: |
+          chmod +x dist-linux/windsurfapi
+          cp deploy/linux/run.sh dist-linux/
+          cp deploy/linux/run-background.sh dist-linux/
+          cp deploy/linux/stop.sh dist-linux/
+          cp deploy/linux/README.md dist-linux/
+          chmod +x dist-linux/*.sh
+          cd dist-linux && zip -r ../windsurfapi-linux.zip . && cd ..
+          echo "Linux zip contents:"; unzip -l windsurfapi-linux.zip
+
       - name: Package macOS zip (arm64 + scripts; x64 included if available)
         run: |
           chmod +x dist-macos/windsurfapi-macos-arm64
@@ -401,7 +452,9 @@ jobs:
         run: |
           ( cd dist-windows && sha256sum windsurfapi.exe windsurfapi-windows.zip ) > SHA256SUMS
           ( cd dist-macos && sha256sum windsurfapi-macos-arm64 ) >> SHA256SUMS
+          ( cd dist-linux && sha256sum windsurfapi ) >> SHA256SUMS
           sha256sum windsurfapi-macos.zip >> SHA256SUMS
+          sha256sum windsurfapi-linux.zip >> SHA256SUMS
           cat SHA256SUMS
 
       - name: Install cosign
@@ -432,7 +485,9 @@ jobs:
             dist-windows/windsurfapi.exe \
             dist-windows/windsurfapi-windows.zip \
             dist-macos/windsurfapi-macos-arm64 \
+            dist-linux/windsurfapi \
             windsurfapi-macos.zip \
+            windsurfapi-linux.zip \
             SHA256SUMS; do
             base="$(basename "$f")"
             cosign sign-blob \
@@ -462,5 +517,7 @@ jobs:
             dist-windows/windsurfapi.exe
             dist-windows/windsurfapi-windows.zip
             dist-macos/windsurfapi-macos-arm64
+            dist-linux/windsurfapi
             windsurfapi-macos.zip
+            windsurfapi-linux.zip
             SHA256SUMS
